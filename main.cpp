@@ -11,6 +11,11 @@ int main() {
     example.Insert(1,0);
     example.Remove(1);
     example.Show(example.GetRoot(),0);
+    //example.clear(example.GetRoot());
+    //example.Show(example.GetRoot(),0);
+
+    example.GetKeys().Show();
+    example.GetValue().Show();
 
     return 0;
 }

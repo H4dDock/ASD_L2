@@ -7,6 +7,8 @@
 
 
 #include <iostream>
+#include <list>
+#include "MyList.h"
 
 using namespace std;
 template <class TKey, class TValue> class MyMap;
@@ -56,15 +58,17 @@ public:
     void FixInsert(Node<TKey,TValue> *newNode);
     void Remove(TKey key);
     void FixRemove(Node<TKey,TValue> *newNode);
-    TValue Find(TKey key);
-    TKey * GetKeys();
-    TValue * GetValue();
+    Node<TKey, TValue> *Find(TKey key);
+    MyList<TKey> GetKeys();
+    MyList<TValue> GetValue();
     void Show(Node<TKey,TValue> *node,int level);
-    void clear();
+    void clear(Node<TKey, TValue> *startingRoot);
     Node<TKey,TValue>* GetRoot(){ return root;}
     ~MyMap();
     MyMap();
 private:
+    void AddKey(Node<TKey, TValue> *node, MyList<TKey> &list);
+    void AddValue(Node<TKey, TValue> *node, MyList<TValue> &list);
     Node<TKey,TValue> *cursor;
     Node<TKey,TValue> *root;
 };
@@ -199,49 +203,78 @@ void MyMap<TKey, TValue>::FixInsert(Node<TKey, TValue> *newNode) {
 template<class TKeys, class TValue>
 void MyMap<TKeys, TValue>::Remove(TKeys key) {
 
-    cursor = root;
-    while(cursor->key != key){ //If there is no key?
-        if(cursor->key < key){
-            cursor = cursor->rightSon;
-        }else{
-            cursor = cursor->leftSon;
+    Node<TKeys, TValue> *deletedNode = Find(key);
+
+    // if its list
+    if ((deletedNode->leftSon == nullptr)&&(deletedNode->rightSon == nullptr)){
+        if (deletedNode == root) {
+            root = nullptr;
+            delete deletedNode;
+        } else {
+
+            if (deletedNode == deletedNode->father->leftSon)
+                deletedNode->father->leftSon = nullptr;
+            else
+                deletedNode->father->rightSon = nullptr;
+
+            if (!deletedNode->color) FixRemove(deletedNode->father);
+            delete deletedNode;
         }
     }
-    if (cursor == nullptr) return;
 
-    Node<TKeys, TValue> *x, *y;
+    //if one son
+    if ((deletedNode->leftSon == nullptr) != (deletedNode->rightSon == nullptr)){
 
+        if (deletedNode == root){
+            if (deletedNode->leftSon != nullptr)
+                root = deletedNode->leftSon;
+            else if (deletedNode->rightSon != nullptr)
+                root = deletedNode->rightSon;
+        } else {
+            Node<TKeys, TValue> *sonOfDeleted;
 
-    if (cursor->leftSon == nullptr || cursor->rightSon == nullptr) {
-        y = cursor;
-    } else {
-        y = cursor->rightSon;
-        while (y->leftSon != nullptr) y = y->leftSon;
+            if (deletedNode->leftSon != nullptr)
+                sonOfDeleted = deletedNode->leftSon;
+            else
+                sonOfDeleted = deletedNode->rightSon;
+
+            sonOfDeleted->father = deletedNode->father;
+
+            if (deletedNode == deletedNode->father->leftSon)
+                deletedNode->father->leftSon = sonOfDeleted;
+            else
+                deletedNode->father->rightSon = sonOfDeleted;
+
+            if (!deletedNode->color) FixRemove(sonOfDeleted);
+            delete deletedNode;
+
+        }
     }
 
-    if (y->leftSon != nullptr)
-        x = y->leftSon;
-    else
-        x = y->rightSon;
+    //if two sons
+    if ((deletedNode->leftSon != nullptr) && (deletedNode->rightSon != nullptr)){
+        Node<TKeys, TValue> *temporaryNode = deletedNode->rightSon;
+        while (temporaryNode->leftSon != nullptr) temporaryNode = temporaryNode->leftSon;
 
-    if(x == nullptr || y == nullptr) cout << "HYI" << endl;
+        if (temporaryNode->rightSon == nullptr){
+            if (temporaryNode == temporaryNode->father->leftSon)
+                temporaryNode->father->leftSon = nullptr;
+            else
+                temporaryNode->father->rightSon = nullptr;
 
-    x->father = y->father;
-    /*if (y->father)
-        if (y == y->father->leftSon)
-            y->father->leftSon = x;
-        else
-            y->father->rightSon = x;
-    else
-        root = x;
-
-    if (y != cursor) cursor->data = y->data;
-
-
-    //if (!y->color)
-        //FixRemove (x);
-
-    free (y);*/
+            deletedNode->key = temporaryNode->key;
+            deletedNode->data = temporaryNode->data;
+            if (!temporaryNode->color) FixRemove(temporaryNode->father);
+        } else {
+            Node<TKeys, TValue> *sonOfTemporary = temporaryNode->rightSon;
+            temporaryNode->father->leftSon = sonOfTemporary;
+            sonOfTemporary->father = temporaryNode->father;
+            deletedNode->key = temporaryNode->key;
+            deletedNode->data = temporaryNode->data;
+            if (!temporaryNode->color) FixRemove(sonOfTemporary);
+        }
+        delete temporaryNode;
+    }
 }
 
 template<class TKey, class TValue>
@@ -301,32 +334,77 @@ void MyMap<TKey, TValue>::FixRemove(Node<TKey,TValue> *deletedNode) {
 }
 
 template<class TKeys, class TValue>
-TValue MyMap<TKeys, TValue>::Find(TKeys key) {
+Node<TKeys, TValue> *MyMap<TKeys, TValue>::Find(TKeys key) {
+
+    Node<TKeys, TValue> *current = root;
+
+    while (current != nullptr){
+        if (current->key == key){
+            return current;
+        }
+        else {
+            current =  (current->key < key)? current->rightSon : current->leftSon;
+        }
+    }
     return nullptr;
 }
 
 template<class TKeys, class TValue>
-void MyMap<TKeys, TValue>::clear() {
+void MyMap<TKeys, TValue>::clear(Node<TKeys, TValue> *startingRoot) {
+    if(root == startingRoot) root = nullptr;
 
+    if(startingRoot != nullptr){
+        clear(startingRoot->leftSon);
+        clear(startingRoot->rightSon);
+        delete startingRoot;
+    }
 }
 
 template<class TKey, class TValue>
-TKey *MyMap<TKey, TValue>::GetKeys() {
-    return nullptr;
+MyList<TKey> MyMap<TKey, TValue>::GetKeys() {
+    MyList<TKey> listOfKeys;
+    AddKey(root, listOfKeys);
+
+    return listOfKeys;
 }
 
 template<class TKey, class TValue>
-TValue *MyMap<TKey, TValue>::GetValue() {
-    return nullptr;
+void MyMap<TKey, TValue>::AddKey(Node<TKey, TValue> *node,MyList<TKey> &listOfKeys) {
+    if(node != nullptr){
+        AddKey(node->leftSon, listOfKeys);
+        listOfKeys.PushBack(node->key);
+        AddKey(node->rightSon, listOfKeys);
+    }
+}
+
+template<class TKey, class TValue>
+MyList<TValue> MyMap<TKey, TValue>::GetValue() {
+    MyList<TValue> listOfValue;
+    AddValue(root, listOfValue);
+
+    return listOfValue;
+}
+
+template<class TKey, class TValue>
+void MyMap<TKey, TValue>::AddValue(Node<TKey, TValue> *node,MyList<TValue> &listOfValue) {
+    if(node != nullptr){
+        AddValue(node->leftSon, listOfValue);
+        listOfValue.PushBack(node->data);
+        AddValue(node->rightSon, listOfValue);
+    }
 }
 
 template<class TKey, class TValue>
 MyMap<TKey, TValue>::~MyMap() {
-
+    clear();
 }
 
 template<class TKey, class TValue>
 void MyMap<TKey, TValue>::Show(Node<TKey , TValue> *node, int level) {
+    if(root == nullptr){
+        cout << "Map is empty\n";
+        return;
+    }
     if (node) {
         Show(node->leftSon,level+1);
         for(int i = 0;i< level;i++) cout<<"     ";
