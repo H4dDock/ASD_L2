@@ -9,6 +9,7 @@
 #include <iostream>
 #include <list>
 #include "MyList.h"
+#include <exception>
 
 using namespace std;
 template <class TKey, class TValue> class MyMap;
@@ -19,6 +20,9 @@ public:
     Node();
     Node(TKeys key, TValue value, bool color,Node* leftSon, Node* rightSon);
     ~Node();
+    bool GetColor(){return color;}
+    TKeys GetKey(){return key;}
+    TValue GetValue(){return data;}
 private:
     TKeys key;
     TValue data;
@@ -61,6 +65,7 @@ public:
     Node<TKey, TValue> *Find(TKey key);
     MyList<TKey> GetKeys();
     MyList<TValue> GetValue();
+    MyList<bool> GetColor();
     void Show(Node<TKey,TValue> *node,int level);
     void clear(Node<TKey, TValue> *startingRoot);
     Node<TKey,TValue>* GetRoot(){ return root;}
@@ -69,6 +74,7 @@ public:
 private:
     void AddKey(Node<TKey, TValue> *node, MyList<TKey> &list);
     void AddValue(Node<TKey, TValue> *node, MyList<TValue> &list);
+    void AddColor(Node<TKey, TValue> *node, MyList<bool> &list);
     Node<TKey,TValue> *cursor;
     Node<TKey,TValue> *root;
 };
@@ -346,7 +352,7 @@ Node<TKeys, TValue> *MyMap<TKeys, TValue>::Find(TKeys key) {
             current =  (current->key < key)? current->rightSon : current->leftSon;
         }
     }
-    return nullptr;
+    throw invalid_argument("There is no node with this key");
 }
 
 template<class TKeys, class TValue>
@@ -395,8 +401,25 @@ void MyMap<TKey, TValue>::AddValue(Node<TKey, TValue> *node,MyList<TValue> &list
 }
 
 template<class TKey, class TValue>
+MyList<bool> MyMap<TKey, TValue>::GetColor() {
+    MyList<bool> listOfColor;
+    AddColor(root, listOfColor);
+
+    return listOfColor;
+}
+
+template<class TKey, class TValue>
+void MyMap<TKey, TValue>::AddColor(Node<TKey, TValue> *node,MyList<bool> &listOfColor) {
+    if(node != nullptr){
+        AddColor(node->leftSon, listOfColor);
+        listOfColor.PushBack(node->color);
+        AddColor(node->rightSon, listOfColor);
+    }
+}
+
+template<class TKey, class TValue>
 MyMap<TKey, TValue>::~MyMap() {
-    clear();
+    clear(root);
 }
 
 template<class TKey, class TValue>
