@@ -21,6 +21,16 @@ namespace {
     };
 }
 
+TEST_F(ClassDeclaration, InsertSimpleWorkTest) {
+    testExample.Insert(5, 7);
+
+    for (unsigned int i = 0; i < 1; ++i) {
+        ASSERT_EQ(testExample.GetKeys().ToArr()[i], 5);
+        ASSERT_EQ(testExample.GetValue().ToArr()[i], 7);
+        ASSERT_EQ(testExample.GetColor().ToArr()[i], false);
+    }
+}
+
 TEST_F(ClassDeclaration, InsertNormalWorkTest) {
     testExample.Insert(5, 7);
     testExample.Insert(10, 17);
@@ -115,6 +125,6 @@ TEST_F(ClassDeclaration, ClearNormalWorkTest) {
     testExample.Insert(5, 7);
     testExample.Insert(10, 17);
     testExample.Insert(15, 27);
-    testExample.clear(testExample.GetRoot());
-    ASSERT_EQ(testExample.GetRoot(), nullptr);
+    testExample.Clear();
+    ASSERT_EQ(testExample.isEmpty(), true);
 }

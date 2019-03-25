@@ -35,6 +35,9 @@ private:
 
 template<class TKeys, class TValue>
 Node<TKeys, TValue>::Node() {
+    father = nullptr;
+    rightSon = nullptr;
+    leftSon = nullptr;
 }
 
 template<class TKeys, class TValue>
@@ -56,22 +59,25 @@ Node<TKeys, TValue>::~Node() {
 
 template <class TKey, class TValue> class MyMap {
 public:
-    void LeftRotate(Node<TKey,TValue> *node);
-    void RightRotate(Node<TKey,TValue> *node);
     void Insert(TKey key, TValue value);
-    void FixInsert(Node<TKey,TValue> *newNode);
     void Remove(TKey key);
-    void FixRemove(Node<TKey,TValue> *newNode);
     Node<TKey, TValue> *Find(TKey key);
     MyList<TKey> GetKeys();
     MyList<TValue> GetValue();
     MyList<bool> GetColor();
-    void Show(Node<TKey,TValue> *node,int level);
-    void clear(Node<TKey, TValue> *startingRoot);
-    Node<TKey,TValue>* GetRoot(){ return root;}
+    void Show();
+    void Clear();
+    bool isEmpty() {return root == nullptr;}
     ~MyMap();
     MyMap();
 private:
+    void HelpClear(Node<TKey, TValue> *startingRoot);
+    Node<TKey,TValue>* GetRoot(){ return root;}
+    void HelpShow(Node<TKey,TValue> *node,int level);
+    void LeftRotate(Node<TKey,TValue> *node);
+    void RightRotate(Node<TKey,TValue> *node);
+    void FixInsert(Node<TKey,TValue> *newNode);
+    void FixRemove(Node<TKey,TValue> *newNode);
     void AddKey(Node<TKey, TValue> *node, MyList<TKey> &list);
     void AddValue(Node<TKey, TValue> *node, MyList<TValue> &list);
     void AddColor(Node<TKey, TValue> *node, MyList<bool> &list);
@@ -140,8 +146,10 @@ void MyMap<TKeys, TValue>::Insert(TKeys key, TValue value) {
             helpToFindFather = cursor;
             if(cursor->key < newNode->key){
                 cursor = cursor->rightSon;
-            }else{
+            }else if(cursor->key > newNode->key){
                 cursor = cursor->leftSon;
+            }else{
+                throw invalid_argument("There this key in the tree");
             }
         }
         newNode->father = helpToFindFather;
@@ -356,14 +364,19 @@ Node<TKeys, TValue> *MyMap<TKeys, TValue>::Find(TKeys key) {
 }
 
 template<class TKeys, class TValue>
-void MyMap<TKeys, TValue>::clear(Node<TKeys, TValue> *startingRoot) {
+void MyMap<TKeys, TValue>::HelpClear(Node<TKeys, TValue> *startingRoot) {
     if(root == startingRoot) root = nullptr;
 
     if(startingRoot != nullptr){
-        clear(startingRoot->leftSon);
-        clear(startingRoot->rightSon);
+        HelpClear(startingRoot->leftSon);
+        HelpClear(startingRoot->rightSon);
         delete startingRoot;
     }
+}
+
+template<class TKey, class TValue>
+void MyMap<TKey, TValue>::Clear() {
+    HelpClear(GetRoot());
 }
 
 template<class TKey, class TValue>
@@ -419,22 +432,27 @@ void MyMap<TKey, TValue>::AddColor(Node<TKey, TValue> *node,MyList<bool> &listOf
 
 template<class TKey, class TValue>
 MyMap<TKey, TValue>::~MyMap() {
-    clear(root);
+    Clear();
 }
 
 template<class TKey, class TValue>
-void MyMap<TKey, TValue>::Show(Node<TKey , TValue> *node, int level) {
+void MyMap<TKey, TValue>::HelpShow(Node<TKey , TValue> *node, int level) {
     if(root == nullptr){
         cout << "Map is empty\n";
         return;
     }
     if (node) {
-        Show(node->leftSon,level+1);
+        HelpShow(node->rightSon,level+1);
         for(int i = 0;i< level;i++) cout<<"     ";
         cout << node->key << "[" << node->color << "]" << endl;
-        Show(node->rightSon,level+1);
+        HelpShow(node->leftSon,level+1);
 
     }
+}
+
+template<class TKey, class TValue>
+void MyMap<TKey, TValue>::Show() {
+    HelpShow(GetRoot(),0);
 }
 
 template<class TKey, class TValue>
